@@ -66,11 +66,11 @@ class TACGenerator:
             # If condition is false, jump to else or end
             self.instructions.append(f"JZ {cond_result} {else_label}")
 
-            # Then block
+            # Then block - execute only if condition is true
             for stmt in node.then_block:
                 self.visit(stmt)
 
-            # Jump to end after then block
+            # Jump to end after then block (skip else block)
             self.instructions.append(f"JMP {end_label}")
 
             # Else block (or subsequent statements)

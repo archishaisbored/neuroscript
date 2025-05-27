@@ -69,11 +69,26 @@ def tokenize(code):
             tokens.append(('NUMBER', int(value)))
             line_start = False
         elif kind == 'IDENT':
+            # Check for dedent when we encounter a token at the start of a line with no indentation
+            if line_start and len(indent_stack) > 1:
+                # This token is at indentation level 0, so we need to dedent
+                while len(indent_stack) > 1:
+                    indent_stack.pop()
+                    tokens.append(('DEDENT', indent_stack[-1]))
+                    print(f"Lexer: Added DEDENT for unindented token, level {indent_stack[-1]}")
+
             if value in KEYWORDS:
                 tokens.append(('KEYWORD', value))
                 # If this keyword starts a block (e.g., 'feel', 'otherwise', 'think', 'while'), expect an indent
                 if value in {'feel', 'otherwise', 'think', 'while'}:
                     expecting_block = True
+                # Special handling for 'otherwise' - force a DEDENT if we're in an indented block
+                if value == 'otherwise' and len(indent_stack) > 1:
+                    # Add DEDENT to close the then block
+                    while len(indent_stack) > 1:
+                        indent_stack.pop()
+                        tokens.insert(-1, ('DEDENT', indent_stack[-1]))  # Insert before the 'otherwise' token
+                        print(f"Lexer: Added DEDENT for 'otherwise', level {indent_stack[-1]}")
             else:
                 tokens.append(('IDENT', value))
             line_start = False

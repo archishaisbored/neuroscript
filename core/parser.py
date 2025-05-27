@@ -213,14 +213,31 @@ class Parser:
     def parse_block(self):
         statements = []
         print(f"Starting parse_block at position {self.pos}, token: {self.current_token()}")
-        if self.current_token()[0] == 'INDENT':
+
+        # Check if we have an INDENT token
+        has_indent = self.current_token()[0] == 'INDENT'
+        if has_indent:
             self.advance()  # Consume INDENT
             print(f"Consumed INDENT, now at position {self.pos}")
         else:
-            print("No INDENT found, returning empty block")
-            return statements
+            # If no INDENT, check if the next statement is indented (for else blocks)
+            # Look ahead to see if there are indented statements
+            if (self.current_token()[0] == 'KEYWORD' and
+                self.pos + 1 < len(self.tokens) and
+                self.tokens[self.pos + 1][0] == 'NEWLINE' and
+                self.pos + 2 < len(self.tokens) and
+                self.tokens[self.pos + 2][0] == 'SKIP'):
+                # This is likely an else block pattern, continue parsing
+                print("No INDENT found but continuing for potential else block")
+            else:
+                print("No INDENT found, returning empty block")
+                return statements
 
         while self.current_token()[0] not in ('DEDENT', 'EOF'):
+            # Check for 'otherwise' keyword - this should end the then block
+            if self.current_token()[0] == 'KEYWORD' and self.current_token()[1] == 'otherwise':
+                print(f"Found 'otherwise' at position {self.pos}, ending then block")
+                break
             stmt = self.parse_statement()
             if stmt:
                 statements.append(stmt)

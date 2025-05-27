@@ -1,17 +1,8 @@
-remember mood = "tired"
-remember x = 0
+#1
 
-think while x < 3
-    speak "thinking..."
-    update x = x + 1
-
-feel x == 3
-    laugh "I’ve done enough thinking!"
-otherwise
-    shout "I’m not done!"
-
-remember name = listen "What's your name?"
-whisper "hi there, " + name
-
-panic "Forgot what I was doing!"
+speak "Welcome to NeuroScript!"
 sleep
+
+
+#2
+

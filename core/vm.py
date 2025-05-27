@@ -8,6 +8,14 @@ class VirtualMachine:
         self.pc = 0
         self.output = []
 
+    def _is_float(self, value):
+        """Check if a string represents a valid float"""
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
+
     def execute(self, instructions, input_value=None):
         self.stack = []
         self.variables = {}
@@ -45,11 +53,9 @@ class VirtualMachine:
                 args = instr[6:]
             elif instr.startswith('JZ '):
                 opcode = "JZ"
-                # Fix: Robust parsing for JZ arguments
-                parts = instr.split(maxsplit=2)
-                if len(parts) != 3:
-                    raise ValueError(f"Invalid JZ instruction format: {instr}")
-                args = f"{parts[1]} {parts[2]}"
+                # JZ now has format "JZ label"
+                parts = instr.split(maxsplit=1)
+                args = parts[1] if len(parts) > 1 else ""
             else:
                 parts = instr.split(maxsplit=1)
                 opcode = parts[0]
@@ -201,7 +207,14 @@ class VirtualMachine:
                 prompt = args[1:prompt_end]
                 var = args[prompt_end+2:].strip()
                 if self.input_index < len(self.input_value):
-                    self.variables[var] = self.input_value[self.input_index]
+                    input_value = self.input_value[self.input_index]
+                    # Try to convert to number if it looks like a number
+                    if isinstance(input_value, str) and input_value.strip().isdigit():
+                        self.variables[var] = int(input_value.strip())
+                    elif isinstance(input_value, str) and self._is_float(input_value.strip()):
+                        self.variables[var] = float(input_value.strip())
+                    else:
+                        self.variables[var] = input_value
                     self.input_index += 1
                     print(f"  Input {var} = {self.variables[var]}")
                 else:
@@ -217,11 +230,8 @@ class VirtualMachine:
                 if not self.stack:
                     raise ValueError("Stack underflow on JZ")
                 condition = self.stack.pop()
-                # Fix: Robustly parse condition and label
-                jz_parts = args.split(maxsplit=1)
-                if len(jz_parts) != 2:
-                    raise ValueError(f"Invalid JZ arguments: {args}")
-                label = jz_parts[1]
+                # The label is now directly in args
+                label = args
                 if label not in self.labels:
                     raise ValueError(f"Label {label} not found")
                 if condition == 0:

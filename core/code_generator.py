@@ -53,7 +53,7 @@ class CodeGenerator:
             subparts = parts[1].split(maxsplit=1)
             if len(subparts) == 2:
                 emit_operand(subparts[0])
-                self.instructions.append(f"JZ {subparts[0]} {subparts[1]}")
+                self.instructions.append(f"JZ {subparts[1]}")
         else:
             # Handle assignments and binary operations
             assign_parts = instruction.split(" = ", 1)
@@ -61,35 +61,53 @@ class CodeGenerator:
                 target = assign_parts[0].strip()
                 expr = assign_parts[1].strip()
                 # Check if it's a binary operation
-                bin_op_parts = expr.split()
-                if len(bin_op_parts) == 3 and bin_op_parts[1] in ("ADD", "SUB", "MUL", "DIV", "EQ", "NEQ", "LT", "GT", "LE", "GE"):
-                    # Binary operation, e.g., t1 = "The sum is: " ADD sum
-                    first_operand = bin_op_parts[0]
-                    operation = bin_op_parts[1]
-                    second_operand = bin_op_parts[2]
-                    emit_operand(first_operand)
-                    emit_operand(second_operand)
-                    if operation == "ADD":
-                        self.instructions.append("ADD")
-                    elif operation == "SUB":
-                        self.instructions.append("SUB")
-                    elif operation == "MUL":
-                        self.instructions.append("MUL")
-                    elif operation == "DIV":
-                        self.instructions.append("DIV")
-                    elif operation == "EQ":
-                        self.instructions.append("EQ")
-                    elif operation == "NEQ":
-                        self.instructions.append("NEQ")
-                    elif operation == "LT":
-                        self.instructions.append("LT")
-                    elif operation == "GT":
-                        self.instructions.append("GT")
-                    elif operation == "LE":
-                        self.instructions.append("LE")
-                    elif operation == "GE":
-                        self.instructions.append("GE")
-                    self.instructions.append(f"STORE {target}")
+                # Handle quoted strings in binary operations properly
+                if ' ADD ' in expr or ' SUB ' in expr or ' MUL ' in expr or ' DIV ' in expr or ' EQ ' in expr or ' NEQ ' in expr or ' LT ' in expr or ' GT ' in expr or ' LE ' in expr or ' GE ' in expr:
+                    # Find the operation
+                    operations = ["ADD", "SUB", "MUL", "DIV", "EQ", "NEQ", "LT", "GT", "LE", "GE"]
+                    operation = None
+                    for op in operations:
+                        if f' {op} ' in expr:
+                            operation = op
+                            break
+
+                    if operation:
+                        # Split on the operation
+                        parts = expr.split(f' {operation} ', 1)
+                        if len(parts) == 2:
+                            first_operand = parts[0].strip()
+                            second_operand = parts[1].strip()
+                            emit_operand(first_operand)
+                            emit_operand(second_operand)
+                            if operation == "ADD":
+                                self.instructions.append("ADD")
+                            elif operation == "SUB":
+                                self.instructions.append("SUB")
+                            elif operation == "MUL":
+                                self.instructions.append("MUL")
+                            elif operation == "DIV":
+                                self.instructions.append("DIV")
+                            elif operation == "EQ":
+                                self.instructions.append("EQ")
+                            elif operation == "NEQ":
+                                self.instructions.append("NEQ")
+                            elif operation == "LT":
+                                self.instructions.append("LT")
+                            elif operation == "GT":
+                                self.instructions.append("GT")
+                            elif operation == "LE":
+                                self.instructions.append("LE")
+                            elif operation == "GE":
+                                self.instructions.append("GE")
+                            self.instructions.append(f"STORE {target}")
+                        else:
+                            # Fallback to simple assignment
+                            emit_operand(expr)
+                            self.instructions.append(f"STORE {target}")
+                    else:
+                        # Simple assignment, e.g., x = 5
+                        emit_operand(expr)
+                        self.instructions.append(f"STORE {target}")
                 else:
                     # Simple assignment, e.g., x = 5
                     emit_operand(expr)
